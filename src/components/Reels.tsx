@@ -35,15 +35,13 @@ export default function Reels({
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
-    if (containerRef.current && observerRef.current)
-      observerRef.current.observe(containerRef.current);
-
+    const observer = observerRef.current;
+    const container = containerRef.current;
+    if (observer && container) observer.observe(container);
     return () => {
-      if (containerRef.current && observerRef.current) {
-        observerRef.current.unobserve(containerRef.current);
-      }
+      if (observer && container) observer.unobserve(container);
     };
-  }, [observerRef]);
+  }, []);
 
   useEffect(() => {
     if (videoRef.current) {

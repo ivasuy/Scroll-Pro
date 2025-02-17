@@ -3,14 +3,14 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import Reels from "./Reels";
 import { fetchVideos } from "@/service/videoService";
 
-export default function ReelList() {
-  interface Reel {
-    id: string;
-    videoUrl: string;
-    productName: string;
-    productUrl: string;
-  }
+export interface Reel {
+  id: string;
+  videoUrl: string;
+  productName: string;
+  productUrl: string;
+}
 
+export default function ReelList() {
   const [reels, setReels] = useState<Reel[]>([]);
   const [activeReelIndex, setActiveReelIndex] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -26,7 +26,7 @@ export default function ReelList() {
       setReels(videos);
     }
     loadVideos();
-  }, []);
+  }, [fetchVideos]);
 
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
@@ -78,7 +78,7 @@ export default function ReelList() {
         if (newIndex !== activeReelIndex) scrollToReel(newIndex);
       }, 100);
     },
-    [activeReelIndex, reels.length, isScrolling]
+    [activeReelIndex, reels.length, isScrolling, scrollToReel]
   );
 
   useEffect(() => {
