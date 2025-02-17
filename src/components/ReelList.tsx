@@ -19,6 +19,8 @@ export default function ReelList() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showScrollMessage, setShowScrollMessage] = useState(true);
   const [isScrolling, setIsScrolling] = useState(false);
+  const touchStartY = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
 
   useEffect(() => {
     async function loadVideos() {
@@ -26,7 +28,7 @@ export default function ReelList() {
       setReels(videos);
     }
     loadVideos();
-  }, [fetchVideos]);
+  }, []);
 
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
@@ -64,6 +66,7 @@ export default function ReelList() {
     }
   };
 
+  // Handle wheel scrolling (for desktop)
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault();
@@ -78,14 +81,48 @@ export default function ReelList() {
         if (newIndex !== activeReelIndex) scrollToReel(newIndex);
       }, 100);
     },
-    [activeReelIndex, reels.length, isScrolling, scrollToReel]
+    [activeReelIndex, reels.length, isScrolling]
   );
+
+  // Handle touch scrolling (for mobile)
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (!touchStartY.current) return;
+    touchEndY.current = e.changedTouches[0].clientY;
+    const deltaY = touchStartY.current - touchEndY.current;
+
+    if (Math.abs(deltaY) > 50) {
+      // Minimum swipe distance to detect a scroll action
+      const direction = deltaY > 0 ? 1 : -1;
+      const newIndex = Math.min(
+        Math.max(0, activeReelIndex + direction),
+        reels.length - 1
+      );
+      if (newIndex !== activeReelIndex) scrollToReel(newIndex);
+    }
+
+    // Reset values
+    touchStartY.current = null;
+    touchEndY.current = null;
+  };
 
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
       container.addEventListener("wheel", handleWheel, { passive: false });
-      return () => container.removeEventListener("wheel", handleWheel);
+      container.addEventListener("touchstart", handleTouchStart, {
+        passive: true,
+      });
+      container.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+      return () => {
+        container.removeEventListener("wheel", handleWheel);
+        container.removeEventListener("touchstart", handleTouchStart);
+        container.removeEventListener("touchend", handleTouchEnd);
+      };
     }
   }, [handleWheel]);
 
